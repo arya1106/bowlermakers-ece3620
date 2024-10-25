@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/Abathini/ece3620-group-project/Bowlermakers-Code/src",
+      "program": "/Users/Abathini/ece3620-group-project/Bowlermakers-Code/src/build/Debug/outDebug"
+    }
+  ]
+}
