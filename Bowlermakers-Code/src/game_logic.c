@@ -1,10 +1,8 @@
 #include "game_logic.h"
-#include "eeprom.h"
 #include <stdlib.h>
 #include <string.h>
 
 Game current_game;
-HighScore high_scores[MAX_HIGH_SCORES];
 
 void init_game(void) {
     current_game.current_frame = 0;
@@ -179,32 +177,11 @@ void advance_game(void) {
 }
 
 void end_game(void) {
-    check_high_score();
     current_game.current_frame++;  // Ensure the game loop terminates
 }
 
 //chris will write read_eeprom in eeprom.c (wrote basic for simulation)
-void load_high_scores(void) {
-    read_eeprom(EEPROM_HIGH_SCORE_ADDR, (uint8_t*)high_scores, sizeof(high_scores));
-}
+// for load_high_scores function
 
 //chris will write write_eeprom in eeprom.c (wrote basic for simulation)
-void save_high_scores(void) {
-    write_eeprom(EEPROM_HIGH_SCORE_ADDR, (uint8_t*)high_scores, sizeof(high_scores));
-}
-
-void check_high_score(void) {
-    for (int i = 0; i < MAX_HIGH_SCORES; i++) {
-        if (current_game.total_score > high_scores[i].score) {
-            // Shift lower scores down
-            for (int j = MAX_HIGH_SCORES - 1; j > i; j--) {
-                high_scores[j] = high_scores[j - 1];
-            }
-            // Insert new high score
-            high_scores[i].score = current_game.total_score;
-            strcpy(high_scores[i].name, "AAA");
-            save_high_scores();
-            break;
-        }
-    }
-}
+// for save_high_scores and check_high_score function

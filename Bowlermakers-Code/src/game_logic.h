@@ -25,13 +25,7 @@ typedef struct {
     int total_score;
 } Game;
 
-typedef struct {
-    char name[4];
-    int score;
-} HighScore;
-
 extern Game current_game;
-extern HighScore high_scores[MAX_HIGH_SCORES];
 
 void init_game(void);
 void reset_pins(void);
@@ -43,9 +37,6 @@ void update_score(int pins_hit);
 void calculate_frame_score(void);
 void advance_game(void);
 void end_game(void);
-void load_high_scores(void);
-void save_high_scores(void);
-void check_high_score(void);
 
 // Aryaaman write for I2C setup 
 extern int get_gesture_value(void);
