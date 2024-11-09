@@ -1,13 +1,5 @@
-#define AK975X_DEFAULT_ADDRESS 0x64  // 7-bit unshifted default I2C Address
-// Address is changeable via two jumpers on the rear of the PCB.
-// Allowed settings are:
-// 00 (0x64 default)
-// 01 (0x65)
-// 10 (0x66)
-// 11 Not allowed - used for switch mode
-
 // Register addresses
-#define AK975X_WIA2 0x01  // Device ID
+#define AK975X_WIA2 0x01 // Device ID
 #define AK975X_INFO1 0x02
 #define SENSORVERSION_AK9750 0x00
 #define SENSORVERSION_AK9753 0x01
@@ -17,7 +9,7 @@
 #define AK975X_IR3 0x0A
 #define AK975X_IR4 0x0C
 #define AK975X_TMP 0x0E
-#define AK975X_ST2 0x10  // Dummy register
+#define AK975X_ST2 0x10 // Dummy register
 #define AK975X_ETH13H 0x11
 #define AK975X_ETH13L 0x13
 #define AK975X_ETH24H 0x15
