@@ -2,22 +2,28 @@
 #include <stdio.h>
 #include <stm32f091xc.h>
 
+#include "assets/welcome_none_high.h"
+// #include "assets/welcome_score_high.h"
+// #include "assets/welcome_start_high.h"
 #include "device_drivers/AK9753.h"
 #include "device_drivers/ir.h"
 #include "device_drivers/lcd.h"
+#include "graphics.h"
+#include "peripheral_drivers/i2c.h"
 #include "peripheral_drivers/uart.h"
 #include "util/clock.h"
 #include "util/util.h"
 
-enum STATE {
-  WELCOME_SCREEN,
+typedef enum {
+  WELCOME_SCREEN_START_HIGHLIGHTED,
+  WELCOME_SCREEN_SCORES_HIGHLIGHTED,
   HIGHSCORE_DISPLAY,
   GAMEPLAY_SET_POSITION,
   GAMEPLAY_SET_ANGLE,
   GAMEPLAY_BOWL_ANIMATION,
   GAMEPLAY_SHOW_PIN_RESULT,
   GAMEPLAY_SHOW_SCORE_RESULT
-};
+} STATE;
 
 void welcome_screen_handle_button();
 void welcome_screen_check_highlighted();
@@ -28,7 +34,9 @@ bool IR2_history[CONV_WINDOW_SIZE];
 bool IR3_history[CONV_WINDOW_SIZE];
 bool IR4_history[CONV_WINDOW_SIZE];
 uint8_t history_idx = 0;
+uint8_t highlight_timer = 0;
 SWIPE_DIRECTION current_swipe = NONE_SWIPE;
+STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
 
 void processIRData() {
   uint8_t ready = 0;
@@ -94,32 +102,44 @@ int main(void) {
 
   LCD_Setup();
   LCD_Clear(0);
-  LCD_DrawFillRectangle(0, 0, 200, 200, WHITE);
+  LCD_DrawPicture(0, 0, &welcome_non_high);
 
   for (;;) {
     processIRData();
     printf(">SWIPE:%d\n", current_swipe);
-    switch (current_swipe) {
-    case LEFT_SWIPE:
-      /* code */
-      LCD_Clear(0);
-      LCD_DrawFillRectangle(0, 0, 200, 200, RED);
-      current_swipe = NONE_SWIPE;
+    printf(">flash_timer:%d\n", highlight_timer);
+    switch (current_state) {
+    case WELCOME_SCREEN_START_HIGHLIGHTED:
+      if (current_swipe == RIGHT_SWIPE) {
+        current_state = WELCOME_SCREEN_SCORES_HIGHLIGHTED;
+      }
+
+      if (highlight_timer == 0) {
+        LCD_DrawFillRectangle(28, 180, 100, 185, YELLOW);
+      } else if (highlight_timer == FLASH_TIMER / 2) {
+        LCD_DrawPicture(0, 0, &welcome_non_high);
+      }
       break;
 
-    case RIGHT_SWIPE:
-      /* code */
-      LCD_Clear(0);
-      LCD_DrawFillRectangle(0, 0, 200, 200, BLUE);
-      current_swipe = NONE_SWIPE;
-      break;
+    case WELCOME_SCREEN_SCORES_HIGHLIGHTED:
+      if (current_swipe == LEFT_SWIPE) {
+        current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
+      }
 
-    case NONE_SWIPE:
-      /* code */
+      if (highlight_timer == 0) {
+        LCD_DrawFillRectangle(200, 180, 290, 185, YELLOW);
+      } else if (highlight_timer == FLASH_TIMER / 2) {
+        LCD_DrawPicture(0, 0, &welcome_non_high);
+      }
       break;
 
     default:
       break;
+    }
+
+    highlight_timer++;
+    if (highlight_timer == FLASH_TIMER) {
+      highlight_timer = 0;
     }
   }
 }
