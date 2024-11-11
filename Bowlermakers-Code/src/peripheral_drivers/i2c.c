@@ -1,5 +1,6 @@
-#include <I2C.h>
 #include <stm32f091xc.h>
+
+#include "peripheral_drivers/i2c.h"
 
 //===========================================================================
 // Configure SDA and SCL.

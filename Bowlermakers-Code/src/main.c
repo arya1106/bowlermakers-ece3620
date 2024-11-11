@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include <stm32f091xc.h>
 
-#include "AK9753.h"
-#include "I2C.h"
-#include "clock.h"
-#include "ir.h"
-#include "lcd.h"
-#include "uart.h"
-#include "util.h"
+#include "device_drivers/AK9753.h"
+#include "device_drivers/ir.h"
+#include "device_drivers/lcd.h"
+#include "peripheral_drivers/uart.h"
+#include "util/clock.h"
+#include "util/util.h"
 
 enum STATE {
   WELCOME_SCREEN,

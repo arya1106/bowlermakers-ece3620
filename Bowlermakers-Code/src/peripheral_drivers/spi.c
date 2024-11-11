@@ -1,5 +1,7 @@
 #include <stm32f0xx.h>
 
+#include "peripheral_drivers/spi.h"
+
 void init_spi1_slow() {
   RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;

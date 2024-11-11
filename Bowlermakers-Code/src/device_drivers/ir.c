@@ -1,11 +1,12 @@
-#include <i2c.h>
-#include <ir.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <util.h>
+
+#include "device_drivers/ir.h"
+#include "peripheral_drivers/i2c.h"
+#include "util/util.h"
 
 void ir_read(uint8_t reg_addr, uint8_t data[], uint8_t len) {
   uint8_t bytes[1];

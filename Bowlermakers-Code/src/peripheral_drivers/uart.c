@@ -1,7 +1,8 @@
-#include "fifo.h"
-#include "tty.h"
 #include <stdio.h>
 #include <stm32f091xc.h>
+
+#include "util/fifo.h"
+#include "util/tty.h"
 
 #define FIFOSIZE 16
 char serfifo[FIFOSIZE];

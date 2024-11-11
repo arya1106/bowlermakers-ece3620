@@ -1,6 +1,7 @@
-#include <eeprom.h>
-#include <i2c.h>
 #include <stdint.h>
+
+#include "device_drivers/eeprom.h"
+#include "peripheral_drivers/i2c.h"
 
 void eeprom_write(uint16_t loc, const char *data, uint8_t len) {
   uint8_t bytes[34];

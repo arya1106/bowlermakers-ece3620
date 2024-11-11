@@ -1,5 +1,6 @@
-#include "fifo.h"
 #include <stdint.h>
+
+#include "util/fifo.h"
 
 //============================================================================
 // Return 1 if the fifo holds no characters to remove.  Otherwise 0.
