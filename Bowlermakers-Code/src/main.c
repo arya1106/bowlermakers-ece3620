@@ -6,6 +6,7 @@
 #include "I2C.h"
 #include "clock.h"
 #include "ir.h"
+#include "lcd.h"
 #include "uart.h"
 #include "util.h"
 
@@ -43,6 +44,9 @@ void processIRData() {
     int16_t IR2 = (IR_data[2]) + (IR_data[3] << 8);
     int16_t IR3 = (IR_data[4]) + (IR_data[5] << 8);
     int16_t IR4 = (IR_data[6]) + (IR_data[7] << 8);
+
+    printf(">IR1:%d\n", IR1);
+    printf(">IR2:%d\n", IR2);
 
     // fill history array for convolution of measurements
     IR1_history[history_idx] = IR1 > DIST_CUTOFF;
@@ -89,8 +93,34 @@ int main(void) {
   // Configure sensor for continous read at 8 hz
   ir_single_write(AK975X_ECNTL1, 0xAC);
 
+  LCD_Setup();
+  LCD_Clear(0);
+  LCD_DrawFillRectangle(0, 0, 200, 200, WHITE);
+
   for (;;) {
     processIRData();
     printf(">SWIPE:%d\n", current_swipe);
+    switch (current_swipe) {
+    case LEFT_SWIPE:
+      /* code */
+      LCD_Clear(0);
+      LCD_DrawFillRectangle(0, 0, 200, 200, RED);
+      current_swipe = NONE_SWIPE;
+      break;
+
+    case RIGHT_SWIPE:
+      /* code */
+      LCD_Clear(0);
+      LCD_DrawFillRectangle(0, 0, 200, 200, BLUE);
+      current_swipe = NONE_SWIPE;
+      break;
+
+    case NONE_SWIPE:
+      /* code */
+      break;
+
+    default:
+      break;
+    }
   }
 }
