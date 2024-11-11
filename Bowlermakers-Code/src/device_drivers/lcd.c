@@ -1098,7 +1098,7 @@ void LCD_DrawString(u16 x, u16 y, u16 fc, u16 bg, const char *p, u8 size,
 //===========================================================================
 // Draw a picture with upper left corner at (x0,y0).
 //===========================================================================
-void LCD_DrawPicture(u16 x0, u16 y0, const Picture *pic) {
+void LCD_DrawPicture(int x0, int y0, const Picture *pic) {
   int x1 = x0 + pic->width - 1;
   int y1 = y0 + pic->height - 1;
   if (x0 >= lcddev.width || y0 >= lcddev.height || x1 < 0 || y1 < 0)

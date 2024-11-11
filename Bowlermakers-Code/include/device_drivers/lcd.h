@@ -91,6 +91,6 @@ typedef const struct {
   unsigned char pixel_data[0];  // variable length array
 } Picture;
 
-void LCD_DrawPicture(u16 x0, u16 y0, const Picture *pic);
+void LCD_DrawPicture(int x0, int y0, const Picture *pic);
 
 #endif
