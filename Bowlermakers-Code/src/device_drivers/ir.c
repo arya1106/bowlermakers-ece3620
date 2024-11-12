@@ -7,6 +7,14 @@
 #include "device_drivers/ir.h"
 #include "peripheral_drivers/i2c.h"
 #include "util/util.h"
+#include <device_drivers/AK9753.h>
+
+bool IR1_history[CONV_WINDOW_SIZE];
+bool IR2_history[CONV_WINDOW_SIZE];
+bool IR3_history[CONV_WINDOW_SIZE];
+bool IR4_history[CONV_WINDOW_SIZE];
+extern SWIPE_DIRECTION current_swipe;
+extern uint8_t history_idx;
 
 void ir_read(uint8_t reg_addr, uint8_t data[], uint8_t len) {
   uint8_t bytes[1];
@@ -80,4 +88,45 @@ SWIPE_DIRECTION parse_conv_arr(bool *right, bool *left) {
   free(leftResult);
   free(rightResult);
   return NONE_SWIPE;
+}
+
+void processIRData() {
+  uint8_t ready = 0;
+  ir_read(AK975X_ST1, &ready, 1);
+  if (ready & 0x01) {
+    uint8_t IR_data[8];
+    ir_read(AK975X_IR1, IR_data, 8); // load dist data from IR1-IR4
+    ir_read(AK975X_ST2, NULL, 0); // read dummy reg (required after data recv)
+
+    // flip endianness of all IR measurements and cast to correct type
+    int16_t IR1 = (IR_data[0]) + (IR_data[1] << 8);
+    int16_t IR2 = (IR_data[2]) + (IR_data[3] << 8);
+    int16_t IR3 = (IR_data[4]) + (IR_data[5] << 8);
+    int16_t IR4 = (IR_data[6]) + (IR_data[7] << 8);
+
+    printf(">IR1:%d\n", IR1);
+    printf(">IR2:%d\n", IR2);
+
+    // fill history array for convolution of measurements
+    IR1_history[history_idx] = IR1 > DIST_CUTOFF;
+    IR2_history[history_idx] = IR2 > DIST_CUTOFF;
+    IR3_history[history_idx] = IR3 > DIST_CUTOFF;
+    IR4_history[history_idx] = IR4 > DIST_CUTOFF;
+
+    // loop circular buffer index
+    history_idx = (history_idx + 1) % CONV_WINDOW_SIZE;
+
+    // check for swipe when buffer is full with cooldown after swipe
+    if (history_idx == CONV_WINDOW_SIZE - 1) {
+      if (ir_cooldown_flag) {
+        ir_cooldown_flag--;
+        current_swipe = NONE_SWIPE;
+      } else {
+        current_swipe = parse_conv_arr(IR3_history, IR1_history);
+      }
+    }
+
+  } else {
+    // printf("not ready\n");
+  }
 }

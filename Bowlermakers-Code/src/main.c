@@ -10,6 +10,7 @@
 #include "device_drivers/ir.h"
 #include "device_drivers/lcd.h"
 #include "graphics.h"
+#include "peripheral_drivers/gpio.h"
 #include "peripheral_drivers/i2c.h"
 #include "peripheral_drivers/uart.h"
 #include "util/clock.h"
@@ -23,62 +24,19 @@ typedef enum {
   GAMEPLAY_SET_ANGLE,
   GAMEPLAY_BOWL_ANIMATION,
   GAMEPLAY_SHOW_PIN_RESULT,
-  GAMEPLAY_SHOW_SCORE_RESULT
+  GAMEPLAY_SHOW_SCORE_RESULT,
+  IDLE,
 } STATE;
 
 void welcome_screen_handle_button();
 void welcome_screen_check_highlighted();
 
 uint8_t ir_cooldown_flag = 0;
-bool IR1_history[CONV_WINDOW_SIZE];
-bool IR2_history[CONV_WINDOW_SIZE];
-bool IR3_history[CONV_WINDOW_SIZE];
-bool IR4_history[CONV_WINDOW_SIZE];
 uint8_t history_idx = 0;
 uint8_t highlight_timer = 0;
 SWIPE_DIRECTION current_swipe = NONE_SWIPE;
 STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
-
-void processIRData() {
-  uint8_t ready = 0;
-  ir_read(AK975X_ST1, &ready, 1);
-  if (ready & 0x01) {
-    uint8_t IR_data[8];
-    ir_read(AK975X_IR1, IR_data, 8); // load dist data from IR1-IR4
-    ir_read(AK975X_ST2, NULL, 0); // read dummy reg (required after data recv)
-
-    // flip endianness of all IR measurements and cast to correct type
-    int16_t IR1 = (IR_data[0]) + (IR_data[1] << 8);
-    int16_t IR2 = (IR_data[2]) + (IR_data[3] << 8);
-    int16_t IR3 = (IR_data[4]) + (IR_data[5] << 8);
-    int16_t IR4 = (IR_data[6]) + (IR_data[7] << 8);
-
-    printf(">IR1:%d\n", IR1);
-    printf(">IR2:%d\n", IR2);
-
-    // fill history array for convolution of measurements
-    IR1_history[history_idx] = IR1 > DIST_CUTOFF;
-    IR2_history[history_idx] = IR2 > DIST_CUTOFF;
-    IR3_history[history_idx] = IR3 > DIST_CUTOFF;
-    IR4_history[history_idx] = IR4 > DIST_CUTOFF;
-
-    // loop circular buffer index
-    history_idx = (history_idx + 1) % CONV_WINDOW_SIZE;
-
-    // check for swipe when buffer is full with cooldown after swipe
-    if (history_idx == CONV_WINDOW_SIZE - 1) {
-      if (ir_cooldown_flag) {
-        ir_cooldown_flag--;
-        current_swipe = NONE_SWIPE;
-      } else {
-        current_swipe = parse_conv_arr(IR3_history, IR1_history);
-      }
-    }
-
-  } else {
-    // printf("not ready\n");
-  }
-}
+volatile bool button_pressed = false;
 
 int main(void) {
 
@@ -96,6 +54,10 @@ int main(void) {
   setbuf(stdout, 0);
   setbuf(stderr, 0);
 
+  // GPIO
+  enable_gpio_ports();
+  gpio_interrupt_init();
+
   // Software reset for sensor
   ir_single_write(AK975X_CNTL2, 0xff);
   // Configure sensor for continous read at 8 hz
@@ -108,11 +70,17 @@ int main(void) {
   for (;;) {
     processIRData();
     printf(">SWIPE:%d\n", current_swipe);
-    printf(">flash_timer:%d\n", highlight_timer);
+    printf(">button:%d\n", button_pressed);
+
     switch (current_state) {
     case WELCOME_SCREEN_START_HIGHLIGHTED:
       if (current_swipe == RIGHT_SWIPE) {
         current_state = WELCOME_SCREEN_SCORES_HIGHLIGHTED;
+        break;
+      }
+      if (button_pressed) {
+        current_state = GAMEPLAY_SET_POSITION;
+        break;
       }
 
       if (highlight_timer == 0) {
@@ -125,6 +93,10 @@ int main(void) {
     case WELCOME_SCREEN_SCORES_HIGHLIGHTED:
       if (current_swipe == LEFT_SWIPE) {
         current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
+        break;
+      }
+      if (button_pressed) {
+        current_state = HIGHSCORE_DISPLAY;
       }
 
       if (highlight_timer == 0) {
@@ -132,6 +104,21 @@ int main(void) {
       } else if (highlight_timer == FLASH_TIMER / 2) {
         LCD_DrawPicture(0, 0, &bowling_pmu);
       }
+      break;
+
+    case HIGHSCORE_DISPLAY:
+      LCD_Clear(BLACK);
+      LCD_DrawString(20, 20, WHITE, BLACK, "high score display", 16, false);
+      current_state = IDLE;
+      break;
+
+    case GAMEPLAY_SET_POSITION:
+      LCD_Clear(BLACK);
+      LCD_DrawString(20, 20, WHITE, BLACK, "gameplay set position", 16, false);
+      current_state = IDLE;
+      break;
+
+    case IDLE:
       break;
 
     default:
