@@ -63,15 +63,21 @@ SWIPE_DIRECTION parse_conv_arr(bool *right, bool *left) {
       memset(right, 0, CONV_WINDOW_SIZE);
       memset(left, 0, CONV_WINDOW_SIZE);
       ir_cooldown_flag = IR_COOLDOWN_CYCLES;
+      free(leftResult);
+      free(rightResult);
       return RIGHT_SWIPE;
     }
     if (rightResult[i] == 1) {
       memset(right, 0, CONV_WINDOW_SIZE);
       memset(left, 0, CONV_WINDOW_SIZE);
       ir_cooldown_flag = IR_COOLDOWN_CYCLES;
+      free(leftResult);
+      free(rightResult);
       return LEFT_SWIPE;
     }
   }
 
+  free(leftResult);
+  free(rightResult);
   return NONE_SWIPE;
 }
