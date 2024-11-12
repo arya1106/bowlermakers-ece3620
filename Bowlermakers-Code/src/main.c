@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stm32f091xc.h>
 
-#include "assets/welcome_none_high.h"
+#include "assets/bowling_pmu.h"
+// #include "assets/welcome_none_high.h"
 // #include "assets/welcome_score_high.h"
 // #include "assets/welcome_start_high.h"
 #include "device_drivers/AK9753.h"
@@ -102,7 +103,7 @@ int main(void) {
 
   LCD_Setup();
   LCD_Clear(0);
-  LCD_DrawPicture(0, 0, &welcome_non_high);
+  LCD_DrawPicture(0, 0, &bowling_pmu);
 
   for (;;) {
     processIRData();
@@ -117,7 +118,7 @@ int main(void) {
       if (highlight_timer == 0) {
         LCD_DrawFillRectangle(28, 180, 100, 185, YELLOW);
       } else if (highlight_timer == FLASH_TIMER / 2) {
-        LCD_DrawPicture(0, 0, &welcome_non_high);
+        LCD_DrawPicture(0, 0, &bowling_pmu);
       }
       break;
 
@@ -129,7 +130,7 @@ int main(void) {
       if (highlight_timer == 0) {
         LCD_DrawFillRectangle(200, 180, 290, 185, YELLOW);
       } else if (highlight_timer == FLASH_TIMER / 2) {
-        LCD_DrawPicture(0, 0, &welcome_non_high);
+        LCD_DrawPicture(0, 0, &bowling_pmu);
       }
       break;
 
