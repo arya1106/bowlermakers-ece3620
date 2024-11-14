@@ -2,10 +2,9 @@
 #include <stdio.h>
 #include <stm32f091xc.h>
 
+#include "assets/ball.h"
+#include "assets/bowling_lane_noisy.h"
 #include "assets/bowling_pmu.h"
-// #include "assets/welcome_none_high.h"
-// #include "assets/welcome_score_high.h"
-// #include "assets/welcome_start_high.h"
 #include "device_drivers/AK9753.h"
 #include "device_drivers/ir.h"
 #include "device_drivers/lcd.h"
@@ -34,9 +33,12 @@ void welcome_screen_check_highlighted();
 uint8_t ir_cooldown_flag = 0;
 uint8_t history_idx = 0;
 uint8_t highlight_timer = 0;
+uint8_t frame_timer = 0;
 SWIPE_DIRECTION current_swipe = NONE_SWIPE;
 STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
-volatile bool button_pressed = false;
+volatile bool confirm_button_pressed = false;
+volatile bool back_button_pressed = false;
+bool inital_draw = false;
 
 int main(void) {
 
@@ -65,12 +67,12 @@ int main(void) {
 
   LCD_Setup();
   LCD_Clear(0);
-  LCD_DrawPicture(0, 0, &bowling_pmu);
+  LCD_DrawPicture(0, 0, &bowling_pmu, false);
 
   for (;;) {
     processIRData();
     printf(">SWIPE:%d\n", current_swipe);
-    printf(">button:%d\n", button_pressed);
+    printf(">button:%d\n", confirm_button_pressed);
 
     switch (current_state) {
     case WELCOME_SCREEN_START_HIGHLIGHTED:
@@ -78,15 +80,34 @@ int main(void) {
         current_state = WELCOME_SCREEN_SCORES_HIGHLIGHTED;
         break;
       }
-      if (button_pressed) {
-        current_state = GAMEPLAY_SET_POSITION;
+      if (confirm_button_pressed) {
+        current_state = IDLE;
+        TempPicturePtr(tile, 80, 80);
+        for (uint8_t i = 0; i < 5; i++) {
+          for (uint8_t j = 0; j < 4; j++) {
+            alley(i * 80, j * 60, 80, 80, &tile);
+            LCD_DrawPicture(i * 80, j * 60, &tile, false);
+          }
+        }
+
+        // bool back = false;
+        // for (uint8_t i = 0; i < 5; i++) {
+        //   for (uint8_t j = 0; j < 4; j++) {
+        //     back = !back;
+        //     LCD_DrawPicture(i * 80, j * 60, &bowling_lane, false);
+        //   }
+        // }
+        // for (uint8_t i = 0; i < 50; i++) {
+        //   back = !back;
+        //   LCD_DrawPicture(rand() % 320, rand() % 240, &bowling_lane, back);
+        // }
         break;
       }
 
       if (highlight_timer == 0) {
         LCD_DrawFillRectangle(28, 180, 100, 185, YELLOW);
       } else if (highlight_timer == FLASH_TIMER / 2) {
-        LCD_DrawPicture(0, 0, &bowling_pmu);
+        LCD_DrawPicture(0, 0, &bowling_pmu, false);
       }
       break;
 
@@ -95,27 +116,47 @@ int main(void) {
         current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
         break;
       }
-      if (button_pressed) {
+      if (confirm_button_pressed) {
         current_state = HIGHSCORE_DISPLAY;
       }
 
       if (highlight_timer == 0) {
         LCD_DrawFillRectangle(200, 180, 290, 185, YELLOW);
       } else if (highlight_timer == FLASH_TIMER / 2) {
-        LCD_DrawPicture(0, 0, &bowling_pmu);
+        LCD_DrawPicture(0, 0, &bowling_pmu, false);
       }
       break;
 
     case HIGHSCORE_DISPLAY:
-      LCD_Clear(BLACK);
-      LCD_DrawString(20, 20, WHITE, BLACK, "high score display", 16, false);
-      current_state = IDLE;
+      if (!inital_draw) {
+        LCD_Clear(BLACK);
+        // LCD_DrawString(20, 20, WHITE, BLACK, "high score display", 16,
+        // false);
+        inital_draw = true;
+      }
       break;
 
     case GAMEPLAY_SET_POSITION:
-      LCD_Clear(BLACK);
-      LCD_DrawString(20, 20, WHITE, BLACK, "gameplay set position", 16, false);
-      current_state = IDLE;
+      if (frame_timer == FRAME_TICK) {
+        uint16_t x = ((float)history_idx / CONV_WINDOW_SIZE) * 320;
+        uint16_t y = ((float)history_idx / CONV_WINDOW_SIZE) * 240;
+        TempPicturePtr(tmp, 80, 80);
+        if (x + (ball.width) < LCD_H) {
+          pic_subset(tmp, &bowling_lane, 0, 0);
+          pic_overlay(tmp, (tmp->width / 2) - (ball.width / 2),
+                      (tmp->height / 2) - (ball.height / 2), &ball, WHITE);
+          LCD_DrawPicture(x - (tmp->width / 2), y - (tmp->height / 2), tmp,
+                          false);
+        } else {
+          LCD_DrawPicture(0, 80, &bowling_lane, false);
+          LCD_DrawPicture(80, 80, &bowling_lane, false);
+          LCD_DrawPicture(160, 80, &bowling_lane, false);
+          LCD_DrawPicture(240, 80, &bowling_lane, false);
+        }
+        frame_timer = 0;
+      } else {
+        frame_timer++;
+      }
       break;
 
     case IDLE:

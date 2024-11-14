@@ -15,6 +15,7 @@ bool IR3_history[CONV_WINDOW_SIZE];
 bool IR4_history[CONV_WINDOW_SIZE];
 extern SWIPE_DIRECTION current_swipe;
 extern uint8_t history_idx;
+extern volatile uint8_t ir_cooldown_flag;
 
 void ir_read(uint8_t reg_addr, uint8_t data[], uint8_t len) {
   uint8_t bytes[1];
@@ -47,7 +48,6 @@ void ir_write(uint8_t reg_addr, const uint8_t *data, uint8_t len) {
 }
 
 SWIPE_DIRECTION parse_conv_arr(bool *right, bool *left) {
-  extern int ir_cooldown_flag;
   int8_t kernel[2] = {1, -1};
   int8_t *leftResult = malloc(sizeof(int16_t) * CONV_WINDOW_SIZE + 1);
   int8_t *rightResult = malloc(sizeof(int16_t) * CONV_WINDOW_SIZE + 1);

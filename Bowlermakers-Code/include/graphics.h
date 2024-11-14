@@ -1,11 +1,15 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#define FLASH_TIMER 255
-#define PLANKS {2464, 3283, 2883, 259, 2652, 3491, 1947, 861, 3230, 1712, 31, 2770, 3218, 321, 2644, 1443, 1736, 2983, 2794, 3571, 3601, 1054, 1813, 1835} //regenerate with [random.randint(1,310*12) for i in range(24)]
-
-#endif // GRAPHICS_H
-
 #include "device_drivers/lcd.h"
 
-void alley();
+#define FLASH_TIMER 255
+#define PLANKS                                                                 \
+  {255,  403,  681,  865,  1009, 1264, 1374, 1484, 1629,                       \
+   1807, 2064, 2228, 2706, 2857, 2935, 3084, 3612}
+// regenerate with [random.randint(1,310*12) for i in range(24)]
+#define FRAME_TICK 0
+
+void alley(int x, int y, int w, int h, Picture *pi);
+
+#endif // GRAPHICS_H

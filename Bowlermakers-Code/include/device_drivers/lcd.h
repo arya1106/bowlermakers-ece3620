@@ -5,6 +5,7 @@
 #ifndef __LCD_H
 #define __LCD_H
 #include "stdlib.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 // shorthand notation for 8-bit and 16-bit unsigned integers
@@ -80,17 +81,24 @@ void LCD_DrawFillTriangle(u16 x0, u16 y0, u16 x1, u16 y1, u16 x2, u16 y2,
 void LCD_DrawChar(u16 x, u16 y, u16 fc, u16 bc, char num, u8 size, u8 mode);
 void LCD_DrawString(u16 x, u16 y, u16 fc, u16 bg, const char *p, u8 size,
                     u8 mode);
+#define TempPicturePtr(name, width, height)                                    \
+  Picture name[(width) * (height) / 6 + 2] = {{width, height, 2}}
 
 //===========================================================================
 // C Picture data structure.
 //===========================================================================
-typedef const struct {
+typedef struct {
   unsigned int width;
   unsigned int height;
   unsigned int bytes_per_pixel; // 2:RGB16, 3:RGB, 4:RGBA
-  unsigned char pixel_data[0];  // variable length array
+  union {
+    unsigned char pixel_data[0]; // variable length array
+    unsigned short pix2[0];
+  };
 } Picture;
 
-void LCD_DrawPicture(int x0, int y0, const Picture *pic);
-
+void LCD_DrawPicture(int x0, int y0, const Picture *pic, bool backwards);
+void pic_overlay(Picture *dst, int xoffset, int yoffset, const Picture *src,
+                 int transparent);
+void pic_subset(Picture *dst, const Picture *src, int sx, int sy);
 #endif
