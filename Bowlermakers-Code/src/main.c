@@ -33,13 +33,16 @@ uint8_t ir_cooldown_flag = 0;
 uint8_t history_idx = 0;
 uint8_t highlight_timer = 0;
 uint8_t frame_timer = 0;
+volatile bool vertSwipe = false;
 SWIPE_DIRECTION current_swipe = NONE_SWIPE;
 STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
 volatile bool confirm_button_pressed = false;
 volatile bool back_button_pressed = false;
 bool inital_draw = false;
-u16 ballX = 0;
-u16 ballY = 0;
+u16 ballX = 20;
+u16 ballY = (LCD_H / 2) - 19;
+u16 newBallX = 20;
+u16 newBallY = (LCD_H / 2) - 19;
 
 int main(void) {
 
@@ -83,6 +86,7 @@ int main(void) {
       }
       if (confirm_button_pressed) {
         current_state = GAMEPLAY_SET_POSITION;
+        vertSwipe = true;
         TempPicturePtr(tile, 80, 80);
         for (uint8_t i = 0; i < 4; i++) {
           for (uint8_t j = 0; j < 4; j++) {
@@ -90,6 +94,8 @@ int main(void) {
             LCD_DrawPicture(i * 80, j * 60, &tile, false);
           }
         }
+
+        move_ball(0, 0, ballX, ballY);
 
         // bool back = false;
         // for (uint8_t i = 0; i < 5; i++) {
@@ -138,16 +144,19 @@ int main(void) {
       break;
 
     case GAMEPLAY_SET_POSITION:
-      if (frame_timer == FRAME_TICK) {
-        u16 newBallX = ((float)history_idx / CONV_WINDOW_SIZE) * 320;
-        u16 newBallY = ((float)history_idx / CONV_WINDOW_SIZE) * 240;
+      if (current_swipe != NONE_SWIPE) {
+        if (current_swipe == LEFT_SWIPE) {
+          newBallY += 10;
+          current_swipe = NONE_SWIPE;
+        } else if (current_swipe == RIGHT_SWIPE) {
+          newBallY -= 10;
+          current_swipe = NONE_SWIPE;
+        }
         move_ball(ballX, ballY, newBallX, newBallY);
         ballX = newBallX;
         ballY = newBallY;
-        frame_timer = 0;
-      } else {
-        frame_timer++;
       }
+
       break;
 
     case IDLE:

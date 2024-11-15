@@ -16,6 +16,7 @@ bool IR4_history[CONV_WINDOW_SIZE];
 extern SWIPE_DIRECTION current_swipe;
 extern uint8_t history_idx;
 extern volatile uint8_t ir_cooldown_flag;
+extern bool vertSwipe;
 
 void ir_read(uint8_t reg_addr, uint8_t data[], uint8_t len) {
   uint8_t bytes[1];
@@ -106,6 +107,8 @@ void processIRData() {
 
     printf(">IR1:%d\n", IR1);
     printf(">IR2:%d\n", IR2);
+    printf(">IR3:%d\n", IR3);
+    printf(">IR4:%d\n", IR4);
 
     // fill history array for convolution of measurements
     IR1_history[history_idx] = IR1 > DIST_CUTOFF;
@@ -121,9 +124,9 @@ void processIRData() {
       if (ir_cooldown_flag) {
         ir_cooldown_flag--;
         current_swipe = NONE_SWIPE;
-      } else {
-        current_swipe = parse_conv_arr(IR3_history, IR1_history);
-      }
+      } else
+        current_swipe = vertSwipe ? parse_conv_arr(IR2_history, IR4_history)
+                                  : parse_conv_arr(IR3_history, IR1_history);
     }
 
   } else {
