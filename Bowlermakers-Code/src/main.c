@@ -3,7 +3,6 @@
 #include <stm32f091xc.h>
 
 #include "assets/ball.h"
-#include "assets/bowling_lane_noisy.h"
 #include "assets/bowling_pmu.h"
 #include "device_drivers/AK9753.h"
 #include "device_drivers/ir.h"
@@ -81,7 +80,7 @@ int main(void) {
         break;
       }
       if (confirm_button_pressed) {
-        current_state = IDLE;
+        current_state = GAMEPLAY_SET_POSITION;
         TempPicturePtr(tile, 80, 80);
         for (uint8_t i = 0; i < 5; i++) {
           for (uint8_t j = 0; j < 4; j++) {
@@ -140,18 +139,14 @@ int main(void) {
       if (frame_timer == FRAME_TICK) {
         uint16_t x = ((float)history_idx / CONV_WINDOW_SIZE) * 320;
         uint16_t y = ((float)history_idx / CONV_WINDOW_SIZE) * 240;
-        TempPicturePtr(tmp, 80, 80);
-        if (x + (ball.width) < LCD_H) {
-          pic_subset(tmp, &bowling_lane, 0, 0);
+        TempPicturePtr(tmp, 45, 45);
+        if (x + (ball.width) < LCD_H && y + (ball.width) < LCD_W) {
+          alley(x - (tmp->width / 2), y - (tmp->height / 2), tmp->width,
+                tmp->height, tmp);
           pic_overlay(tmp, (tmp->width / 2) - (ball.width / 2),
                       (tmp->height / 2) - (ball.height / 2), &ball, WHITE);
           LCD_DrawPicture(x - (tmp->width / 2), y - (tmp->height / 2), tmp,
                           false);
-        } else {
-          LCD_DrawPicture(0, 80, &bowling_lane, false);
-          LCD_DrawPicture(80, 80, &bowling_lane, false);
-          LCD_DrawPicture(160, 80, &bowling_lane, false);
-          LCD_DrawPicture(240, 80, &bowling_lane, false);
         }
         frame_timer = 0;
       } else {

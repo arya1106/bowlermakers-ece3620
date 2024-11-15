@@ -13,7 +13,7 @@ void alley(int x, int y, int w, int h, Picture *pi) {
   u16 *pixel_data = pi->pix2;
 
   for (int i = 0; i < w; i++) {
-    for (int j = 0; j < h; i++) {
+    for (int j = 0; j < h; j++) {
       pixel_data[j * w + i] = 0xa325;
 
       if ((y + j % 20) % 19 == 0) {
