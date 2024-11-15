@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <stm32f091xc.h>
 
-#include "assets/ball.h"
 #include "assets/bowling_pmu.h"
 #include "device_drivers/AK9753.h"
 #include "device_drivers/ir.h"
 #include "device_drivers/lcd.h"
 #include "graphics.h"
+#include "graphics/ball.h"
 #include "peripheral_drivers/gpio.h"
 #include "peripheral_drivers/i2c.h"
 #include "peripheral_drivers/uart.h"
@@ -38,6 +38,8 @@ STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
 volatile bool confirm_button_pressed = false;
 volatile bool back_button_pressed = false;
 bool inital_draw = false;
+u16 ballX = 0;
+u16 ballY = 0;
 
 int main(void) {
 
@@ -82,7 +84,7 @@ int main(void) {
       if (confirm_button_pressed) {
         current_state = GAMEPLAY_SET_POSITION;
         TempPicturePtr(tile, 80, 80);
-        for (uint8_t i = 0; i < 5; i++) {
+        for (uint8_t i = 0; i < 4; i++) {
           for (uint8_t j = 0; j < 4; j++) {
             alley(i * 80, j * 60, 80, 80, &tile);
             LCD_DrawPicture(i * 80, j * 60, &tile, false);
@@ -137,17 +139,11 @@ int main(void) {
 
     case GAMEPLAY_SET_POSITION:
       if (frame_timer == FRAME_TICK) {
-        uint16_t x = ((float)history_idx / CONV_WINDOW_SIZE) * 320;
-        uint16_t y = ((float)history_idx / CONV_WINDOW_SIZE) * 240;
-        TempPicturePtr(tmp, 45, 45);
-        if (x + (ball.width) < LCD_H && y + (ball.width) < LCD_W) {
-          alley(x - (tmp->width / 2), y - (tmp->height / 2), tmp->width,
-                tmp->height, tmp);
-          pic_overlay(tmp, (tmp->width / 2) - (ball.width / 2),
-                      (tmp->height / 2) - (ball.height / 2), &ball, WHITE);
-          LCD_DrawPicture(x - (tmp->width / 2), y - (tmp->height / 2), tmp,
-                          false);
-        }
+        u16 newBallX = ((float)history_idx / CONV_WINDOW_SIZE) * 320;
+        u16 newBallY = ((float)history_idx / CONV_WINDOW_SIZE) * 240;
+        move_ball(ballX, ballY, newBallX, newBallY);
+        ballX = newBallX;
+        ballY = newBallY;
         frame_timer = 0;
       } else {
         frame_timer++;
