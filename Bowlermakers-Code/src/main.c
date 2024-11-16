@@ -11,6 +11,7 @@
 #include "peripheral_drivers/gpio.h"
 #include "peripheral_drivers/i2c.h"
 #include "peripheral_drivers/uart.h"
+#include "physics.h"
 #include "util/clock.h"
 #include "util/util.h"
 
@@ -39,12 +40,19 @@ STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
 volatile bool confirm_button_pressed = false;
 volatile bool back_button_pressed = false;
 bool inital_draw = false;
+
+float x = 0;
+float y = 0;
+float a = 0;
 u16 ballX = 20;
 u16 ballY = (LCD_H / 2) - 19;
 u16 newBallX = 20;
 u16 newBallY = (LCD_H / 2) - 19;
 
 int main(void) {
+
+  ballX = (u16)x;
+  ballY = (u16)y;
 
   // set clock to 48 MHz
   internal_clock();
@@ -158,6 +166,35 @@ int main(void) {
       }
 
       break;
+
+      if (confirm_button_pressed) {
+        current_state = GAMEPLAY_SET_ANGLE;
+      }
+
+    case GAMEPLAY_SET_ANGLE:
+      move_ball(ballX, ballY, ballX, ballY);
+
+      float xc = x + 19;
+      float yc = y + 19;
+      update_ball(&xc, &yc, a, 20);
+      LCD_DrawLine((uint16_t)x + 19, (uint16_t)y + 19, xc, yc, RED);
+
+      if (current_swipe == LEFT_SWIPE) {
+        a -= 4;
+      }
+      if (current_swipe == RIGHT_SWIPE) {
+        a += 4;
+      }
+
+      current_swipe = NONE_SWIPE;
+
+      if (confirm_button_pressed) {
+        current_state = GAMEPLAY_BOWL_ANIMATION;
+      }
+
+    case GAMEPLAY_BOWL_ANIMATION:
+      update_ball(&x, &y, a, 4);
+      move_ball(ballX, ballY, (u16)x, (u16)y);
 
     case IDLE:
       break;
