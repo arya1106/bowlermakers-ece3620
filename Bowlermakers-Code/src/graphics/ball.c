@@ -1,8 +1,9 @@
 #include "assets/ball_graphic.h"
 #include "device_drivers/lcd.h"
+#include "graphics.h"
 
 void move_ball(u16 oldX, u16 oldY, u16 newX, u16 newY) {
-  TempPicturePtr(tmp, 40, 40);
+  TempPicturePtr(tmp, 30, 30);
   alley(oldX - (tmp->width / 2), oldY - (tmp->height / 2), tmp->width,
         tmp->height, tmp);
   LCD_DrawPicture(oldX - (tmp->width / 2), oldY - (tmp->height / 2), tmp,

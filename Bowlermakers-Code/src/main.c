@@ -12,6 +12,8 @@
 #include "peripheral_drivers/i2c.h"
 #include "peripheral_drivers/uart.h"
 #include "physics.h"
+#include "pins.h"
+
 #include "util/clock.h"
 #include "util/util.h"
 
@@ -39,11 +41,13 @@ SWIPE_DIRECTION current_swipe = NONE_SWIPE;
 STATE current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
 volatile bool confirm_button_pressed = false;
 volatile bool back_button_pressed = false;
-bool inital_draw = false;
+bool ball_reset = false;
+pin_position pin_presets[] = PIN_COORDS;
+bool pins_hit[10] = {false};
 
-float x = 0;
-float y = 0;
-float a = 0;
+float ballX_f = 0;
+float ballY_f = 0;
+float angle = 0;
 u16 ballX = 20;
 u16 ballY = (LCD_H / 2) - 19;
 u16 newBallX = 20;
@@ -51,8 +55,8 @@ u16 newBallY = (LCD_H / 2) - 19;
 
 int main(void) {
 
-  ballX = (u16)x;
-  ballY = (u16)y;
+  ballX_f = ballX;
+  ballY_f = ballY;
 
   // set clock to 48 MHz
   internal_clock();
@@ -62,7 +66,7 @@ int main(void) {
   init_i2c();
 
   // UART Setup
-  init_usart5();
+  // init_usart5();
   enable_tty_interrupt();
   setbuf(stdin, 0);
   setbuf(stdout, 0);
@@ -93,8 +97,9 @@ int main(void) {
         break;
       }
       if (confirm_button_pressed) {
+        confirm_button_pressed = false;
         current_state = GAMEPLAY_SET_POSITION;
-        vertSwipe = true;
+        // vertSwipe = true;
         TempPicturePtr(tile, 80, 80);
         for (uint8_t i = 0; i < 4; i++) {
           for (uint8_t j = 0; j < 4; j++) {
@@ -102,7 +107,7 @@ int main(void) {
             LCD_DrawPicture(i * 80, j * 60, &tile, false);
           }
         }
-
+        create_pin_rectangles();
         move_ball(0, 0, ballX, ballY);
 
         // bool back = false;
@@ -132,6 +137,7 @@ int main(void) {
         break;
       }
       if (confirm_button_pressed) {
+        confirm_button_pressed = false;
         current_state = HIGHSCORE_DISPLAY;
       }
 
@@ -143,15 +149,21 @@ int main(void) {
       break;
 
     case HIGHSCORE_DISPLAY:
-      if (!inital_draw) {
+      if (!ball_reset) {
         LCD_Clear(BLACK);
         // LCD_DrawString(20, 20, WHITE, BLACK, "high score display", 16,
         // false);
-        inital_draw = true;
+        ball_reset = true;
       }
       break;
 
     case GAMEPLAY_SET_POSITION:
+      if (confirm_button_pressed) {
+        confirm_button_pressed = false;
+        ballX_f = ballX;
+        ballY_f = ballY;
+        current_state = GAMEPLAY_SET_ANGLE;
+      }
       if (current_swipe != NONE_SWIPE) {
         if (current_swipe == LEFT_SWIPE) {
           newBallY += 10;
@@ -164,39 +176,68 @@ int main(void) {
         ballX = newBallX;
         ballY = newBallY;
       }
-
       break;
 
-      if (confirm_button_pressed) {
-        current_state = GAMEPLAY_SET_ANGLE;
-      }
-
     case GAMEPLAY_SET_ANGLE:
-      move_ball(ballX, ballY, ballX, ballY);
-
-      float xc = x + 19;
-      float yc = y + 19;
-      update_ball(&xc, &yc, a, 20);
-      LCD_DrawLine((uint16_t)x + 19, (uint16_t)y + 19, xc, yc, RED);
+      if (ball_reset) {
+        move_ball(ballX, ballY, ballX, ballY);
+        ball_reset = false;
+      }
 
       if (current_swipe == LEFT_SWIPE) {
-        a -= 4;
+        angle += 6;
+        current_swipe = NONE_SWIPE;
+        ball_reset = true;
       }
       if (current_swipe == RIGHT_SWIPE) {
-        a += 4;
+        angle -= 6;
+        current_swipe = NONE_SWIPE;
+        ball_reset = true;
       }
 
-      current_swipe = NONE_SWIPE;
+      float potential_x_f = ballX_f;
+      float potential_y_f = ballY_f;
+      calculate_ball_position(&potential_x_f, &potential_y_f, angle, 20);
+      LCD_DrawLine(ballX, ballY, potential_x_f, potential_y_f, RED);
 
       if (confirm_button_pressed) {
+        ballX_f = potential_x_f;
+        ballY_f = potential_y_f;
         current_state = GAMEPLAY_BOWL_ANIMATION;
       }
+      break;
 
     case GAMEPLAY_BOWL_ANIMATION:
-      update_ball(&x, &y, a, 4);
-      move_ball(ballX, ballY, (u16)x, (u16)y);
+      calculate_ball_position(&ballX_f, &ballY_f, angle, 4);
+      move_ball(ballX, ballY, (u16)ballX_f, (u16)ballY_f);
+      ballX = ballX_f;
+      ballY = ballY_f;
+      scan_pins(ballX, ballY);
+      clear_hit_pins();
+      if (ballX + 19 > LCD_H || ballY + 19 > LCD_W || ballX - 19 < 0 ||
+          ballY - 19 < 0) {
+        current_state = GAMEPLAY_SHOW_PIN_RESULT;
+      }
+      break;
 
-    case IDLE:
+    case GAMEPLAY_SHOW_PIN_RESULT:
+      LCD_Clear(BLACK);
+      LCD_DrawString(20, 20, WHITE, BLACK, "You knocked down pins: ", 16, true);
+      printf("Pins hit: ");
+      for (int i = 0; i < 10; i++) {
+        printf("%d ", pins_hit[i]);
+      }
+      printf("\n");
+      for (int i = 0; i < 10; i++) {
+        char str[3];
+        snprintf(str, 3, "%d", i + 1);
+        if (pins_hit[i]) {
+          LCD_DrawString(20 + i * 30, 40, YELLOW, BLACK, str, 16, true);
+        } else {
+          LCD_DrawString(20 + i * 30, 40, GRAY, BLACK, str, 16, true);
+        }
+      }
+      current_state = IDLE;
       break;
 
     default:
