@@ -41,8 +41,8 @@ static void update_pin_array(u16 x, u16 y) {
 }
 
 void scan_pins(u16 ballX, u16 ballY) {
-  for (u16 i = ballX - 30 / 2; i <= ballX + 30 / 2; i++) {
-    for (u16 j = ballY - 30 / 2; j <= ballY + 30 / 2; j++) {
+  for (u16 i = ballX - 20 / 2; i <= ballX + 20 / 2; i++) {
+    for (u16 j = ballY - 20 / 2; j <= ballY + 20 / 2; j++) {
       update_pin_array(i, j);
     }
   }
