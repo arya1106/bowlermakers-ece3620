@@ -10,6 +10,10 @@ void write_high_score(int s) {
     int p = read_high_score();
     if (s > p)
     {
-        eeprom_write(SCORE_LOC, &s, 4);
+        write_high_score_f(s);
     }
+}
+
+void write_high_score_f(int s) {
+    eeprom_write(SCORE_LOC, &s, 4);
 }

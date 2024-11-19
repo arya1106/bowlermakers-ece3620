@@ -53,6 +53,9 @@ u16 ballX = 20;
 u16 ballY = (LCD_H / 2) - 19;
 u16 newBallX = 20;
 u16 newBallY = (LCD_H / 2) - 19;
+int rolls = 0;
+int frames = 0;
+int score = 0;
 
 void draw_alley() {
   TempPicturePtr(tile, 80, 80);
@@ -78,7 +81,7 @@ int main(void) {
   init_i2c();
 
   // UART Setup
-  // init_usart5();
+  //init_usart5();
   enable_tty_interrupt();
   setbuf(stdin, 0);
   setbuf(stdout, 0);
@@ -97,7 +100,7 @@ int main(void) {
   LCD_Clear(0);
   LCD_DrawPicture(0, 0, &bowling_pmu, false);
 
-  write_high_score(10);
+  write_high_score_f(0);
 
   for (;;) {
     processIRData();
@@ -162,6 +165,10 @@ int main(void) {
         sprintf(s, "%d", read_high_score());
         LCD_DrawString(120, 20, WHITE, BLACK, s, 16, true);
         ball_reset = true;
+      }
+      if (confirm_button_pressed) {
+        confirm_button_pressed = false;
+        current_state = WELCOME_SCREEN_START_HIGHLIGHTED;
       }
       break;
 
@@ -248,10 +255,40 @@ int main(void) {
       }
       if (confirm_button_pressed) {
         confirm_button_pressed = false;
+        rolls++;
+
         ballX = 20;
         ballY = (LCD_H / 2) - 19;
+        newBallX = 20;
+        newBallY = (LCD_H / 2) - 19;
+        angle = 0;
+        ballX_f = 0;
+
+        int kd = 0;
+        for (int i = 0; i < 10; i++) {
+          kd += pins_hit[i];
+        }
+        if (kd == 10 || rolls == 2) {
+          if (rolls == 1) {
+            score += 5;
+          }
+          score += kd;
+          for (int i = 0; i < 10; i++) {
+            rolls = 0;
+            pins_hit[i] = false;
+          }
+          frames++;
+        }
         draw_alley();
-        current_state = GAMEPLAY_SET_POSITION;
+        if (frames == 10) {
+          write_high_score(score);
+          score = 0;
+          frames = 0;
+          current_state = WELCOME_SCREEN_SCORES_HIGHLIGHTED;
+        } else {
+          current_state = GAMEPLAY_SET_POSITION;
+        }
+
       }
       break;
 
