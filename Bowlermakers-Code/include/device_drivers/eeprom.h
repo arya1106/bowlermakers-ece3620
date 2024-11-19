@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define EEPROM_ADDR 0x51
+#define EEPROM_ADDR 0x50
 
 void eeprom_write(uint16_t loc, const char *data, uint8_t len);
 void eeprom_read(uint16_t loc, char data[], uint8_t len);

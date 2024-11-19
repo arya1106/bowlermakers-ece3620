@@ -13,6 +13,7 @@
 #include "peripheral_drivers/uart.h"
 #include "physics.h"
 #include "pins.h"
+#include "scoring.h"
 
 #include "util/clock.h"
 #include "util/util.h"
@@ -54,7 +55,6 @@ u16 newBallX = 20;
 u16 newBallY = (LCD_H / 2) - 19;
 
 int main(void) {
-
   ballX_f = ballX;
   ballY_f = ballY;
 
@@ -84,6 +84,8 @@ int main(void) {
   LCD_Setup();
   LCD_Clear(0);
   LCD_DrawPicture(0, 0, &bowling_pmu, false);
+
+  write_high_score(0);
 
   for (;;) {
     processIRData();
@@ -151,8 +153,10 @@ int main(void) {
     case HIGHSCORE_DISPLAY:
       if (!ball_reset) {
         LCD_Clear(BLACK);
-        // LCD_DrawString(20, 20, WHITE, BLACK, "high score display", 16,
-        // false);
+        LCD_DrawString(20, 20, WHITE, BLACK, "High Score: ", 16, true);
+        char s[4];
+        sprintf(s, "%d", read_high_score());
+        LCD_DrawString(40, 20, WHITE, BLACK, s, 16, true);
         ball_reset = true;
       }
       break;
@@ -237,7 +241,10 @@ int main(void) {
           LCD_DrawString(20 + i * 30, 40, GRAY, BLACK, str, 16, true);
         }
       }
-      current_state = IDLE;
+      if (confirm_button_pressed) {
+        confirm_button_pressed = false;
+        current_state = GAMEPLAY_SET_POSITION;
+      }
       break;
 
     default:
