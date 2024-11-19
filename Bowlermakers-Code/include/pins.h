@@ -23,7 +23,7 @@ typedef struct {
    {.top_left_x = 190, .top_left_y = 123},                                     \
    {.top_left_x = 190, .top_left_y = 139}}
 
-void create_pin_rectangles(void);
+void create_pin_rectangles(bool pins_hit[10]);
 void scan_pins(u16 ballX, u16 ballY);
 void clear_hit_pins(void);
 #endif /* PINS_H */

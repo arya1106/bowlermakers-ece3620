@@ -54,6 +54,18 @@ u16 ballY = (LCD_H / 2) - 19;
 u16 newBallX = 20;
 u16 newBallY = (LCD_H / 2) - 19;
 
+void draw_alley() {
+  TempPicturePtr(tile, 80, 80);
+  for (uint8_t i = 0; i < 4; i++) {
+    for (uint8_t j = 0; j < 4; j++) {
+      alley(i * 80, j * 60, 80, 80, &tile);
+      LCD_DrawPicture(i * 80, j * 60, &tile, false);
+    }
+  }
+  create_pin_rectangles(pins_hit);
+  move_ball(0, 0, ballX, ballY);
+}
+
 int main(void) {
   ballX_f = ballX;
   ballY_f = ballY;
@@ -85,7 +97,7 @@ int main(void) {
   LCD_Clear(0);
   LCD_DrawPicture(0, 0, &bowling_pmu, false);
 
-  write_high_score(0);
+  write_high_score(10);
 
   for (;;) {
     processIRData();
@@ -102,15 +114,7 @@ int main(void) {
         confirm_button_pressed = false;
         current_state = GAMEPLAY_SET_POSITION;
         // vertSwipe = true;
-        TempPicturePtr(tile, 80, 80);
-        for (uint8_t i = 0; i < 4; i++) {
-          for (uint8_t j = 0; j < 4; j++) {
-            alley(i * 80, j * 60, 80, 80, &tile);
-            LCD_DrawPicture(i * 80, j * 60, &tile, false);
-          }
-        }
-        create_pin_rectangles();
-        move_ball(0, 0, ballX, ballY);
+        draw_alley();
 
         // bool back = false;
         // for (uint8_t i = 0; i < 5; i++) {
@@ -156,7 +160,7 @@ int main(void) {
         LCD_DrawString(20, 20, WHITE, BLACK, "High Score: ", 16, true);
         char s[4];
         sprintf(s, "%d", read_high_score());
-        LCD_DrawString(40, 20, WHITE, BLACK, s, 16, true);
+        LCD_DrawString(120, 20, WHITE, BLACK, s, 16, true);
         ball_reset = true;
       }
       break;
@@ -205,6 +209,7 @@ int main(void) {
       LCD_DrawLine(ballX, ballY, potential_x_f, potential_y_f, RED);
 
       if (confirm_button_pressed) {
+        confirm_button_pressed = false;
         ballX_f = potential_x_f;
         ballY_f = potential_y_f;
         current_state = GAMEPLAY_BOWL_ANIMATION;
@@ -243,6 +248,9 @@ int main(void) {
       }
       if (confirm_button_pressed) {
         confirm_button_pressed = false;
+        ballX = 20;
+        ballY = (LCD_H / 2) - 19;
+        draw_alley();
         current_state = GAMEPLAY_SET_POSITION;
       }
       break;

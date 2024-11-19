@@ -1,9 +1,10 @@
 #include "pins.h"
 #include "graphics.h"
 
-void create_pin_rectangles(void) {
+void create_pin_rectangles(bool pins_hit[10]) {
   extern pin_position pin_presets[];
   for (int i = 0; i < NUM_PINS; i++) {
+    if (!pins_hit[i])
     LCD_DrawFillRectangle(pin_presets[i].top_left_x, pin_presets[i].top_left_y,
                           pin_presets[i].top_left_x + PIN_DIM,
                           pin_presets[i].top_left_y + PIN_DIM, WHITE);
